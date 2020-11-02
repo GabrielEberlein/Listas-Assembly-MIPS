@@ -16,17 +16,27 @@ fin:
 condicionalNuevoNodo:
         addi $sp, $sp, -4
         sw $ra, 0($sp)
-        jal nuevoNodo 
+        jal nuevoNodo #Llamamos a nuevoNodo para el primerNodo
         lw $ra, 0($sp)
         addi $sp, $sp, 4
         
         li $t0, 1
-        li $v0, 1
+        li $v0, 1               
         lw $a0, nodo
         
         addi $sp, $sp, -4
         sw $ra, 0($sp)
-        jal nuevoNodo 
+        jal nuevoNodo #Agrego un segundo nodo pra probar
+        lw $ra, 0($sp)
+        addi $sp, $sp, 4
+
+        li $t0, 1
+        li $v0, 1               
+        lw $a0, nodo
+        
+        addi $sp, $sp, -4
+        sw $ra, 0($sp)
+        jal nuevoNodo #Agrego un tercer nodo pra probar
         lw $ra, 0($sp)
         addi $sp, $sp, 4
 
