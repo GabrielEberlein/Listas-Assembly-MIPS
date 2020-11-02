@@ -1,16 +1,26 @@
-#Declaramos macros
-        .eqv nodo_ant    0
-        .eqv nodo_sig    4
-        .eqv nodo_val    8
-        .eqv nodo_tamano 12
 .data 
         nodo: .word 0
 .text
-loop_main:
-        li $t0, 1
-        lw $a0, nodo
-        beq $v0, $t0, nuevoNodo
 
+main:
+        li $t0, 1
+        li $v0, 1
+        lw $a0, nodo
+        beq $v0, $t0, condicionalNuevoNodo
+        
+        
+fin:
+        jr $ra
+
+condicionalNuevoNodo:
+        addi $sp, $sp, -4
+        sw $ra, 0($sp)
+        jal nuevoNodo 
+        lw $ra, 0($sp)
+        addi $sp, $sp, 4
+        
+        j fin 
+        
 nuevoNodo:#en $a0 recibimos la direccion de un nodo
         move $t0, $a0
         li $a0, 12
@@ -23,7 +33,8 @@ nuevoNodo:#en $a0 recibimos la direccion de un nodo
 
         move $a0, $v0 #cargamos en $a0 la direccion del nodo
         beq $t0, $zero, primerNodo
-
+        
+        jr $ra
   
 primerNodo: 
         
@@ -41,7 +52,8 @@ primerNodo:
         lw $ra, 0($sp)
         addi $sp, $sp, 4
         
-        sw $v0, nodo+8($0)                  #Guardo la direc donde se va a guardar el string en el nodo  
+        lw $t2, nodo($0)
+        sw $v0, 8($t2)                  #Guardo la direc donde se va a guardar el string en el nodo  
 
         move $a0, $v0                   #paso los argumentos a leerNodo
         li $a1, 50
@@ -52,6 +64,7 @@ primerNodo:
         lw $ra, 0($sp)
         addi $sp, $sp, 4
 
+
 malloc: li $v0, 9       
         syscall # devuelve v0 con el puntero a la memoria pedida
         jr $ra 
@@ -59,3 +72,4 @@ malloc: li $v0, 9
 leerNodo: 
         li $v0, 8
         syscall
+        jr $ra 
