@@ -1,5 +1,3 @@
-#Declaramos macros
-
 .data 
         opcionesMenu: .asciiz  "Para ver la lista presione 0, para ingresar una nueva categoria 1, \npara modificar una categoria 2, para finalizar el programa 3: " 
         OpcionUno: .asciiz  "Ingrese la nueva categoria: "
@@ -8,10 +6,13 @@
 
         categoriaActual: .asciiz "Estas modificando la categoria: "
         opcionesMenuCategoria: .asciiz "Para ver la categoria presione 0, para ingresar un nuevo nodo 1, \npara eliminar un nodo 2, para eliminar la categoria 3, \npara ver la siguiente categoria 4, para ver la anterior categoria 5, para volver al menu principal 6"
-        eliminarNodo: .asciiz "Ingrese la id del nodo a eliminar: "
+        mensajeEliminarNodo: .asciiz "Ingrese la id del nodo a eliminar: "
+
+        espacio: .ascii " "
 
         limpiadorOOOr: .asciiz "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
         nodo: .word 0
+        
 .text
         
 clear:
@@ -45,6 +46,7 @@ menuCategorias:
     	syscall
 
         lw $a0, nodo($0)
+        lw $t1, 12($a0)
 
         lw $a0, 8($a0)    #imprimimos la categoria
 	li $v0, 4
@@ -57,13 +59,13 @@ menuCategorias:
         li $v0, 5                       #leemos la opcion pedida por el menu
         syscall
         
-        #beq $v0, $zero, mostrarLista
+        beq $v0, $zero, mostrarCategoria
         li $t0, 1
         beq $v0, $t0, ingresarNodo
         li $t0, 2
-        #beq $v0, $t0, eliminarNodo
+        beq $v0, $t0, eliminarID
         li $t0, 3
-        #beq $v0, $t0, eliminarCategoria
+        beq $v0, $t0, eliminarCategoria
         li $t0, 4
         beq $v0, $t0, sigCategoria
         li $t0, 5
@@ -75,7 +77,7 @@ fin:
         li $v0, 10
         syscall
 
-volverMain: 
+volverMain:
         addi $sp, $sp, -4
         sw $ra, 0($sp)
         jal clear               #limpiamos la papantalla 
@@ -287,19 +289,32 @@ listaVacia:
 
         j main
 
-modificarCategoria:
-        li $v0, 5
+mostrarCategoria:
+
+        beq $t1, $zero, categoriaVacia
+
+        lw $a0, 12($t1)         #Imprimo el ID
+        li $v0, 1
         syscall
 
-        lw $a0, nodo($0)
-        lw $a1, nodo($0)
-        move $a2, $v0
+        lw $a0, 8($t1)          #Imprimo el elemento
+        li $v0, 4
+        syscall
 
-        addi $sp, $sp, -4                       #recibe como parametro en a0 un nodo pibot, en a1 el mismo nodo pero que se va a ir modificando
-        sw $ra, 0($sp)                          #y en a2 el entero buscado 
-        jal buscarNodo                          #salto buscarnodo, devuielve en v0 la direccion del nodo 
-        lw $ra, 0($sp)
-        addi $sp, $sp, 4
+        lw $t1, 4($t1)
+        lw $a0, nodo($0)
+        lw $a0, 12($a0)
+
+        bne $a0, $t1, mostrarCategoria
+
+        j menuCategorias
+categoriaVacia:
+        la $a0, empty    #decimos que la lista esta vacia 
+	li $v0, 4
+    	syscall
+
+        j menuCategorias
+
 
 
 buscarNodo:
@@ -319,7 +334,7 @@ retornarzero:
         jr $ra
 
 retornarNodo:
-        move $v0, $a0                    #retorno la direccion recibida en $a0
+        move $v0, $a1                    #retorno la direccion recibida en $a1
         jr $ra
 
 
@@ -332,3 +347,86 @@ leerNodo:
         li $v0, 8
         syscall
         jr $ra 
+
+eliminarNodo:           #recibimos en $a0 la direccion del nodo a eliminar
+                        #if nodo-> ant == nodo then nodo=0  / nodo[12] = 0
+                        #else   $t0->sig = nodo->sig
+                        #       nodo->sig->ant = $t0
+        lw $t0, 0($a0)  #$t0=nodo->ant
+        beq $t0, $a0, retornarzero
+        lw $t1, 4($a0)  #t1 = nodo->sig
+        sw $t1, 4($t0)  #nodo->ant->sig = nodo->sig
+        sw $t0, 0($t1)  #nodo->sig->ant = nodo->ant
+        
+        lw $t2, nodo
+
+        li $v0, 1
+
+        bne $a1, $v0, return #peruanada para poder reusar la funcion
+
+        sw $t0, 12($t2)
+        
+
+        jr $ra
+return:
+        lw $a0, 4($a0)
+        sw $a0, nodo($0)
+        jr $ra 
+eliminarID:
+        la $a0, mensajeEliminarNodo    #pedimos un entero 
+	li $v0, 4
+    	syscall
+        
+        li $v0, 5
+        syscall
+
+        lw $t0, nodo
+        lw $t0, 12($t0)
+        move $a0, $t0                             
+        move $a1, $t0
+        move $a2, $v0
+
+        addi $sp, $sp, -4                       #recibe como parametro en a0 un nodo pibot, en a1 el mismo nodo pero que se va a ir modificando
+        sw $ra, 0($sp)                          #y en a2 el entero buscado 
+        jal buscarNodo                          #salto buscarnodo, devuielve en v0 la direccion del nodo 
+        lw $ra, 0($sp)
+        addi $sp, $sp, 4
+
+        move $t3, $v0
+
+        move $a0, $v0
+        li $a1, 1
+        addi $sp, $sp, -4                       #recibe como parametro en a0 un nodo
+        sw $ra, 0($sp)                          #lo elimina ;V 
+        jal eliminarNodo                        #salto Eliminarnodo, devuielve en v0 1 si la lista tenia mas de un elemento 
+        lw $ra, 0($sp)                          #                                    0 si la lista tenia solo un elemento
+        addi $sp, $sp, 4
+
+        bne $v0, $0, menuCategorias
+
+        lw $t0, nodo
+        sw $0, 12($t0)
+
+        j menuCategorias
+eliminarCategoria:
+        
+        lw $a0, nodo($0)
+        li $a1, 1
+
+        addi $sp, $sp, -4                       #recibe como parametro en a0 un nodo
+        sw $ra, 0($sp)                          #lo elimina ;V 
+        jal eliminarNodo                        #salto eliminarnodo, devuielve en v0 1 si la lista tenia mas de un elemento 
+        lw $ra, 0($sp)                          #                                    0 si la lista tenia solo un elemento
+        addi $sp, $sp, 4
+
+        lw $a0, nodo($0)
+        lw $a0, 4($a0)
+        sw $a0, nodo($0)  
+
+        beq $v0, $0, nodoAZero
+
+        j main
+
+nodoAZero: 
+        sw $0, nodo
+        j main 
